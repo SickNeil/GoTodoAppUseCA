@@ -1,0 +1,37 @@
+services:
+  todo-app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo-database  # 將 todo-database 改為 mongo-database
+      - postgres-database  # 增加 PostgreSQL 資料庫的依賴
+    environment:
+      - POSTGRES_DB_HOST=postgres-database  # PostgreSQL 資料庫的主機名
+      - POSTGRES_DB_USER=sa           # PostgreSQL 的使用者
+      - POSTGRES_DB_PASSWORD=P@ssword   # PostgreSQL 的密碼
+      - POSTGRES_DB_NAME=Users             # PostgreSQL 資料庫名稱
+      - MONGO_DB_HOST=mongo-database        # MongoDB 的主機名
+
+  mongo-database:  # 將名稱更改為 mongo-database
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db  
+
+  postgres-database:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: sa              # PostgreSQL 的使用者名稱
+      POSTGRES_PASSWORD: P@ssword      # PostgreSQL 的密碼
+      POSTGRES_DB: Users                  # PostgreSQL 資料庫名稱
+    ports:
+      - "5432:5432"                        # PostgreSQL 默認的連接端口
+    volumes:
+      - postgres-data:/var/lib/postgresql/data  # 持久化儲存
+      - ./tableInit/init.sql:/docker-entrypoint-initdb.d/init.sql:ro  # 將 SQL 文件掛載到容器
+
+volumes:
+  mongo-data:
+  postgres-data:

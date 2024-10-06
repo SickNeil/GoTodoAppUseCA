@@ -1,0 +1,38 @@
+<!-- templates/todos.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Todo App</title>
+    <link rel="stylesheet" href="//stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="text-center">Todo App</h1>
+    <form method="POST" action="/">
+        <div class="form-group">
+            <input type="text" name="task" class="form-control" placeholder="新增任務">
+        </div>
+        <button type="submit" class="btn btn-primary">新增</button>
+    </form>
+    <hr>
+    {{ if .tasks }}
+    <ul class="list-group">
+        {{ range .tasks }}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <strong>{{ .Task }}</strong><br>
+                <small class="text-muted">{{ .CreatedAt | formatAsDate }}</small>
+            </div>
+            <form method="POST" action="/delete/{{ .ID }}">
+                <button type="submit" class="btn btn-danger btn-sm">刪除</button>
+            </form>
+        </li>
+        {{ end }}
+    </ul>
+    {{ else }}
+    <p class="text-center">目前沒有任何任務，請新增。</p>
+    {{ end }}
+</div>
+</body>
+</html>
