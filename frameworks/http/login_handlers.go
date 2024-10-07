@@ -5,6 +5,7 @@ import (
 	"go-todo-app/usecases"
 	"net/http"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,8 +35,20 @@ func (h *LoginHandler) PerformLogin(c *gin.Context) {
 		return
 	}
 
-	// 登入成功，設定 Session 或 JWT（根據需求實作）
+	// 登入成功，設定 Session
+	session := sessions.Default(c)
+	session.Set("user", username)
+	session.Save()
+
 	c.Redirect(http.StatusSeeOther, "/")
+}
+
+func (h *LoginHandler) Logout(c *gin.Context) {
+	session := sessions.Default(c)
+	session.Clear()
+	session.Save()
+
+	c.Redirect(http.StatusSeeOther, "/login")
 }
 
 // ShowRegisterPage 顯示註冊頁面

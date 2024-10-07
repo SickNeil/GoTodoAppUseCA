@@ -9,6 +9,9 @@
 <body>
 <div class="container mt-5">
     <h1 class="text-center">Todo App</h1>
+    <div class="text-right">
+        歡迎，{{ .Username }} | <a href="/logout">登出</a>
+    </div>
     <form method="POST" action="/">
         <div class="form-group">
             <input type="text" name="task" class="form-control" placeholder="新增任務">

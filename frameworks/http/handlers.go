@@ -5,6 +5,7 @@ import (
 	"go-todo-app/usecases"
 	"net/http"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,9 +24,13 @@ func (h *TodoHandler) ShowTodos(c *gin.Context) {
 		return
 	}
 
-	// 使用 c.HTML 渲染模板，並將待辦事項列表傳遞到模板中
+	// 獲取使用者名稱
+	session := sessions.Default(c)
+	username := session.Get("user")
+
 	c.HTML(http.StatusOK, "todos.html", gin.H{
-		"tasks": todos,
+		"tasks":    todos,
+		"Username": username,
 	})
 }
 
