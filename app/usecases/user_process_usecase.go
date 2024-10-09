@@ -6,18 +6,18 @@ import (
 	"go-todo-app/utils"
 )
 
-// LoginUseCase 定義登入相關的業務邏輯
-type LoginUseCase struct {
+// UserProcessUseCase 定義登入相關的業務邏輯
+type UserProcessUseCase struct {
 	Repo entities.LoginRepository
 }
 
-// NewLoginUseCase 建立新的 LoginUseCase
-func NewLoginUseCase(repo entities.LoginRepository) *LoginUseCase {
-	return &LoginUseCase{Repo: repo}
+// NewLoginUseCase 建立新的 UserProcessUseCase
+func NewLoginUseCase(repo entities.LoginRepository) *UserProcessUseCase {
+	return &UserProcessUseCase{Repo: repo}
 }
 
 // RegisterUser 用於註冊新使用者
-func (uc *LoginUseCase) RegisterUser(username, password, email string) error {
+func (uc *UserProcessUseCase) RegisterUser(username, password, email string) error {
 	// 加密密碼
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
@@ -33,7 +33,7 @@ func (uc *LoginUseCase) RegisterUser(username, password, email string) error {
 }
 
 // Login 用於登入驗證
-func (uc *LoginUseCase) Login(username, password string) (bool, error) {
+func (uc *UserProcessUseCase) Login(username, password string) (bool, error) {
 	user, err := uc.Repo.GetUserByUsername(username)
 	if err != nil {
 		return false, err

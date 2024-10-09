@@ -5,7 +5,6 @@ import (
 	"go-todo-app/usecases"
 	"net/http"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,9 +23,12 @@ func (h *TodoHandler) ShowTodos(c *gin.Context) {
 		return
 	}
 
-	// 獲取使用者名稱
-	session := sessions.Default(c)
-	username := session.Get("user")
+	// 從上下文中獲取使用者名稱
+	username, exists := c.Get("username")
+	if !exists {
+		c.String(http.StatusUnauthorized, "未獲取到使用者資訊")
+		return
+	}
 
 	c.HTML(http.StatusOK, "todos.html", gin.H{
 		"tasks":    todos,

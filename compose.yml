@@ -1,6 +1,20 @@
 services:
+  api-gateway:
+    build:
+      context: ./api-gateway
+    ports:
+      - "5000:5000"
+    environment:
+      - AUTH_SERVER_URL=http://auth-server:4000
+      - TODO_APP_URL=http://todo-app:3000
+    depends_on:
+      - auth-server
+      - todo-app
+      
   todo-app:
-    build: .
+    build: 
+      context: ./app
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     depends_on:
@@ -12,6 +26,22 @@ services:
       - POSTGRES_DB_PASSWORD=P@ssword   # PostgreSQL 的密碼
       - POSTGRES_DB_NAME=Users             # PostgreSQL 資料庫名稱
       - MONGO_DB_HOST=mongo-database        # MongoDB 的主機名
+      - JWT_SECRET=your_secret_key            # JWT 的密鑰
+
+  auth-server:
+    build:
+      context: ./auth
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    depends_on:
+      - postgres-database
+    environment:
+      - POSTGRES_DB_HOST=postgres-database
+      - POSTGRES_DB_USER=sa
+      - POSTGRES_DB_PASSWORD=P@ssword
+      - POSTGRES_DB_NAME=Users
+      - JWT_SECRET=your_secret_key
 
   mongo-database:  # 將名稱更改為 mongo-database
     image: mongo:6

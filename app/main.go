@@ -14,8 +14,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -56,14 +54,10 @@ func main() {
 
 	// 初始化 Handler
 	todoHandler := handlers.NewTodoHandler(todoUseCase)
-	loginHandler := handlers.NewLoginHandler(loginUseCase)
+	userProcessHandler := handlers.NewUserProcessHandler(loginUseCase)
 
 	// 初始化 Gin
 	router := gin.Default()
-
-	// 設定 Session 中間件
-	store := cookie.NewStore([]byte("secret"))
-	router.Use(sessions.Sessions("mysession", store))
 
 	// 設置自定義函數到模板引擎
 	router.SetFuncMap(template.FuncMap{
@@ -73,15 +67,15 @@ func main() {
 	router.LoadHTMLGlob("/root/templates/*")
 
 	// 登入與註冊路由
-	router.GET("/login", loginHandler.ShowLoginPage)
-	router.POST("/login", loginHandler.PerformLogin)
-	router.GET("/register", loginHandler.ShowRegisterPage)
-	router.POST("/register", loginHandler.PerformRegister)
-	router.GET("/logout", loginHandler.Logout)
+	router.GET("/login", userProcessHandler.ShowLoginPage)
+	router.POST("/login", userProcessHandler.PerformLogin)
+	router.GET("/register", userProcessHandler.ShowRegisterPage)
+	router.POST("/register", userProcessHandler.PerformRegister)
+	router.GET("/logout", userProcessHandler.Logout)
 
-	// 需要登入的路由群組
+	// 需要 JWT 認證的路由群組
 	authorized := router.Group("/")
-	authorized.Use(handlers.AuthRequired())
+	authorized.Use(handlers.JWTAuth())
 	{
 		authorized.GET("/", todoHandler.ShowTodos)
 		authorized.POST("/", todoHandler.AddTodo)
