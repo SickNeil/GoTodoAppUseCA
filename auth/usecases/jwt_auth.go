@@ -12,6 +12,7 @@ import (
 
 type JWTAuth interface {
 	GenerateToken(user *entities.User) (string, error)
+	IsTokenValid(token string) (bool, error)
 }
 
 type jwtAuth struct {
@@ -32,6 +33,7 @@ func NewJWTAuth() JWTAuth {
 func (j *jwtAuth) GenerateToken(user *entities.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"username": user.Username,
+		"email":    user.Email,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
 
@@ -41,4 +43,25 @@ func (j *jwtAuth) GenerateToken(user *entities.User) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func (j *jwtAuth) IsTokenValid(tokenString string) (bool, error) {
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "defaultKey"
+	}
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(jwtSecret), nil
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return true, nil
+	}
+
+	return false, nil
 }

@@ -1,30 +1,29 @@
-# 建構階段：使用官方的 Go 圖像作為基礎映像
+# 建構階段
 FROM golang:1.23-alpine AS builder
 
-# 設置工作目錄
 WORKDIR /app
 
-# 複製 go.mod 和 go.sum 並下載依賴
+RUN go clean -modcache
+
 COPY go.mod go.sum ./
 RUN go mod download
 
-# 複製源代碼到容器中
 COPY . .
 
-# 構建 Go 應用程式
-RUN go build -o api-gateway .
+# 設定環境變數
+ENV GO111MODULE=on
 
-# 運行階段：使用輕量級的 Alpine 映像
+# 建構應用程式
+RUN go build -o main .
+
+# 運行階段
 FROM alpine:latest
 
-# 設置工作目錄
 WORKDIR /root/
 
-# 複製建構階段的構建成果到運行階段
-COPY --from=builder /app/api-gateway .
+COPY --from=builder /app/main .
+COPY --from=builder /app/templates ./templates
 
-# 暴露服務端口
 EXPOSE 5000
 
-# 設置容器啟動時運行的命令
-CMD ["./api-gateway"]
+CMD ["./main"]

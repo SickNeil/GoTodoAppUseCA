@@ -31,6 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer postgresDB.Close()
+
 	userRepo := interfaces.NewPostgresUserRepository(postgresDB)
 	jwtAuth := usecases.NewJWTAuth()
 	userUseCase := usecases.NewUserUseCase(*userRepo, jwtAuth)
@@ -44,6 +45,7 @@ func main() {
 	// 設定路由
 	router.POST("/login", authHandler.Login)
 	router.POST("/register", authHandler.Register)
+	router.POST("/validate-token", authHandler.IsTokenValid)
 
 	// 啟動服務器
 	router.Run(":4000")

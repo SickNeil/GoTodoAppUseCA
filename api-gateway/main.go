@@ -2,41 +2,57 @@
 package main
 
 import (
-	"api-gateway/handlers"
-	"api-gateway/middlewares"
-	"api-gateway/services"
-	"api-gateway/utils"
-	"log"
+	handlers "go-todo-app/frameworks/http"
+	loginInterfaces "go-todo-app/interfaces/login"
+	todoInterfaces "go-todo-app/interfaces/todo"
+	"go-todo-app/usecases"
+	"go-todo-app/utils"
+	"html/template"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/lib/pq"
 )
 
 func main() {
-	// 讀取配置
-	config := utils.LoadConfig()
 
-	// 初始化服務
-	authService := services.NewAuthService(config.AuthServerURL)
-	authHandler := handlers.NewAuthHandler(authService)
+	// 初始化 Repository
+	todoRepo := todoInterfaces.NewJwtTodoRepository()
+	loginRepo := loginInterfaces.NewJwtLoginRepository()
 
-	todoHandler, err := handlers.NewTodoHandler(config.TodoAppURL)
-	if err != nil {
-		log.Fatal("初始化 TodoHandler 失敗：", err)
-	}
+	// 初始化 UseCase
+	todoUseCase := usecases.NewTodoUseCase(todoRepo)
+	loginUseCase := usecases.NewLoginUseCase(loginRepo)
+
+	// 初始化 Handler
+	todoHandler := handlers.NewTodoHandler(todoUseCase)
+	userProcessHandler := handlers.NewLoginProcessHandler(loginUseCase)
 
 	// 初始化 Gin
 	router := gin.Default()
 
-	// 登入路由
-	router.POST("/login", authHandler.Login)
+	// 設置自定義函數到模板引擎
+	router.SetFuncMap(template.FuncMap{
+		"formatAsDate": utils.FormatAsDate,
+	})
 
-	// 需要驗證的路由
-	authorized := router.Group("/todo")
-	authorized.Use(middlewares.JWTAuthMiddleware())
+	router.LoadHTMLGlob("/root/templates/*")
+
+	// 登入與註冊路由
+	router.GET("/login", userProcessHandler.ShowLoginPage)
+	router.POST("/login", userProcessHandler.PerformLogin)
+	router.GET("/register", userProcessHandler.ShowRegisterPage)
+	router.POST("/register", userProcessHandler.PerformRegister)
+	router.GET("/logout", userProcessHandler.Logout)
+
+	// 需要 JWT 認證的路由群組
+	authorized := router.Group("/")
+	authorized.Use(handlers.JWTAuth())
 	{
-		authorized.Any("/*proxyPath", todoHandler.Proxy)
+		authorized.GET("/", todoHandler.ShowTodos)
+		authorized.POST("/", todoHandler.AddTodo)
+		authorized.POST("/delete/:id", todoHandler.DeleteTodo)
 	}
 
-	// 啟動服務
+	// 啟動服務器
 	router.Run(":5000")
 }

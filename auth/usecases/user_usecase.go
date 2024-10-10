@@ -9,9 +9,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserUseCase interface {
+type AuthUserUseCase interface {
 	Login(username, password string) (string, error)
 	Register(user *entities.User) error
+	IsTokenValid(token string) (bool, error)
 }
 
 type userUseCase struct {
@@ -19,7 +20,7 @@ type userUseCase struct {
 	jwtAuth  JWTAuth
 }
 
-func NewUserUseCase(userRepo interfaces.PostgresUserRepository, jwtAuth JWTAuth) UserUseCase {
+func NewUserUseCase(userRepo interfaces.PostgresUserRepository, jwtAuth JWTAuth) AuthUserUseCase {
 	return &userUseCase{
 		userRepo: userRepo,
 		jwtAuth:  jwtAuth,
@@ -72,7 +73,6 @@ func (u *userUseCase) Register(user *entities.User) error {
 	return u.userRepo.CreateUser(user)
 }
 
-func HashPassword(s string) {
-	// 實作密碼哈希邏輯
-
+func (u *userUseCase) IsTokenValid(token string) (bool, error) {
+	return u.jwtAuth.IsTokenValid(token)
 }

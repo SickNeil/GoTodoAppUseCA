@@ -3,7 +3,6 @@ package interfaces
 
 import (
 	"context"
-	"fmt"
 	"go-todo-app/entities"
 	"time"
 
@@ -25,8 +24,6 @@ func (m *MongoDBTodoRepository) Insert(todo entities.Todo) error {
 	var objID primitive.ObjectID
 	var err error
 
-	fmt.Println("Insert todo: ", todo)
-	fmt.Println("Insert todo: ", todo.ID, todo.ID == "")
 	// 如果 ID 是空的，則讓 MongoDB 自動生成 ObjectID
 	if todo.ID == "" {
 		objID = primitive.NewObjectID()

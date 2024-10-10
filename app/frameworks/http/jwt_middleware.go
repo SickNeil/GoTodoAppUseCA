@@ -12,7 +12,6 @@ import (
 var JwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 func JWTAuth() gin.HandlerFunc {
-	fmt.Println("JwtSecret", JwtSecret)
 	return func(c *gin.Context) {
 		// 從 Cookie 中獲取 Token
 		tokenString, err := c.Cookie("token")

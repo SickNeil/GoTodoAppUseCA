@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"go-todo-app/usecases"
 	"io"
 	"net/http"
@@ -13,21 +14,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type UserProcessHandler struct {
+type LoginProcessHandler struct {
 	UseCase *usecases.UserProcessUseCase
 }
 
-func NewUserProcessHandler(useCase *usecases.UserProcessUseCase) *UserProcessHandler {
-	return &UserProcessHandler{UseCase: useCase}
+func NewLoginProcessHandler(useCase *usecases.UserProcessUseCase) *LoginProcessHandler {
+	return &LoginProcessHandler{UseCase: useCase}
 }
 
 // ShowLoginPage 顯示登入頁面
-func (h *UserProcessHandler) ShowLoginPage(c *gin.Context) {
+func (h *LoginProcessHandler) ShowLoginPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "login.html", nil)
 }
 
 // PerformLogin 處理登入請求
-func (h *UserProcessHandler) PerformLogin(c *gin.Context) {
+func (h *LoginProcessHandler) PerformLogin(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
@@ -59,6 +60,8 @@ func (h *UserProcessHandler) PerformLogin(c *gin.Context) {
 	json.Unmarshal(body, &successResponse)
 	token := successResponse["token"]
 
+	fmt.Println("Token: ", token)
+
 	// 將 Token 保存到 Cookie 中
 	c.SetCookie("token", token, 3600, "/", "", false, true)
 
@@ -85,7 +88,7 @@ func SendToAuthServer(param []byte, url string) (response []byte, err error) {
 	return body, nil
 }
 
-func (h *UserProcessHandler) Logout(c *gin.Context) {
+func (h *LoginProcessHandler) Logout(c *gin.Context) {
 	// 清除 Cookie 中的 Token
 	c.SetCookie("token", "", -1, "/", "", false, true)
 
@@ -94,12 +97,12 @@ func (h *UserProcessHandler) Logout(c *gin.Context) {
 }
 
 // ShowRegisterPage 顯示註冊頁面
-func (h *UserProcessHandler) ShowRegisterPage(c *gin.Context) {
+func (h *LoginProcessHandler) ShowRegisterPage(c *gin.Context) {
 	c.HTML(http.StatusOK, "register.html", nil)
 }
 
 // PerformRegister 處理註冊請求
-func (h *UserProcessHandler) PerformRegister(c *gin.Context) {
+func (h *LoginProcessHandler) PerformRegister(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 	email := c.PostForm("email")

@@ -4,16 +4,18 @@ package handlers
 import (
 	"auth/entities"
 	"auth/usecases"
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthHandler struct {
-	UseCase usecases.UserUseCase
+	UseCase usecases.AuthUserUseCase
 }
 
-func NewAuthHandler(useCase usecases.UserUseCase) *AuthHandler {
+func NewAuthHandler(useCase usecases.AuthUserUseCase) *AuthHandler {
 	return &AuthHandler{
 		UseCase: useCase,
 	}
@@ -63,4 +65,45 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "註冊成功"})
+}
+
+func (h *AuthHandler) IsTokenValid(c *gin.Context) {
+	fmt.Println("Checking token")
+	// 從標頭中獲取 Authorization 標頭的內容
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		fmt.Println("No token provided")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未提供授權 Token"})
+		c.Abort()
+		return
+	}
+
+	// 檢查標頭是否包含 Bearer 前綴
+	const bearerPrefix = "Bearer "
+	if !strings.HasPrefix(authHeader, bearerPrefix) {
+		fmt.Println("Invalid token format")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "無效的授權 Token"})
+		c.Abort()
+		return
+	}
+
+	// 提取 Bearer 之後的 Token 部分
+	token := strings.TrimPrefix(authHeader, bearerPrefix)
+	if token == "" {
+		fmt.Println("Empty token")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "授權 Token 是空的"})
+		c.Abort()
+		return
+	}
+
+	// 使用 UseCase 驗證 Token 是否有效
+	if _, err := h.UseCase.IsTokenValid(token); err != nil {
+		fmt.Println("Invalid token")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "無效的授權 Token"})
+		c.Abort()
+		return
+	}
+
+	// 驗證成功後繼續執行
+	c.Next()
 }

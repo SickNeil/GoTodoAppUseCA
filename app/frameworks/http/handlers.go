@@ -2,6 +2,7 @@
 package handlers
 
 import (
+	"fmt"
 	"go-todo-app/usecases"
 	"net/http"
 
@@ -12,42 +13,49 @@ type TodoHandler struct {
 	UseCase *usecases.TodoUseCase
 }
 
+type AddTodoRequest struct {
+	Task string `json:"task" binding:"required"`
+}
+
 func NewTodoHandler(useCase *usecases.TodoUseCase) *TodoHandler {
 	return &TodoHandler{UseCase: useCase}
 }
 
 func (h *TodoHandler) ShowTodos(c *gin.Context) {
+	fmt.Println("app server show todos")
 	todos, err := h.UseCase.GetTodos()
 	if err != nil {
+		fmt.Println("app server show todos error", err)
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// 從上下文中獲取使用者名稱
-	username, exists := c.Get("username")
-	if !exists {
-		c.String(http.StatusUnauthorized, "未獲取到使用者資訊")
-		return
-	}
-
-	c.HTML(http.StatusOK, "todos.html", gin.H{
-		"tasks":    todos,
-		"Username": username,
+	fmt.Println("app server todos", todos)
+	c.JSON(http.StatusOK, gin.H{
+		"tasks": todos,
 	})
 }
 
 func (h *TodoHandler) AddTodo(c *gin.Context) {
-	task := c.PostForm("task")
-	if task == "" {
-		c.Redirect(http.StatusSeeOther, "/")
+	var req AddTodoRequest
+
+	// 解析 JSON 請求
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
 		return
 	}
-	err := h.UseCase.AddTodo(task)
+
+	// 檢查 task 是否為空
+	if req.Task == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "task is required"})
+		return
+	}
+	err := h.UseCase.AddTodo(req.Task)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.Redirect(http.StatusSeeOther, "/")
+	c.JSON(http.StatusCreated, gin.H{"message": "task added"})
 }
 
 func (h *TodoHandler) DeleteTodo(c *gin.Context) {
@@ -57,5 +65,5 @@ func (h *TodoHandler) DeleteTodo(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.Redirect(http.StatusSeeOther, "/")
+	c.JSON(http.StatusOK, gin.H{"message": "task deleted"})
 }
