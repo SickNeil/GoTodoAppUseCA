@@ -22,7 +22,6 @@ FROM alpine:latest
 WORKDIR /root/
 
 COPY --from=builder /app/main .
-COPY --from=builder /app/templates ./templates
 
 EXPOSE 3000
 

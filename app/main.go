@@ -45,15 +45,12 @@ func main() {
 
 	// 初始化 Repository
 	todoRepo := todoInterfaces.NewMongoDBTodoRepository(todoCollection)
-	// loginRepo := loginInterfaces.NewPostgresLoginRepository(postgresDB)
 
 	// 初始化 UseCase
 	todoUseCase := usecases.NewTodoUseCase(todoRepo)
-	// loginUseCase := usecases.NewLoginUseCase(loginRepo)
 
 	// 初始化 Handler
 	todoHandler := handlers.NewTodoHandler(todoUseCase)
-	// userProcessHandler := handlers.NewUserProcessHandler(loginUseCase)
 
 	// 初始化 Gin
 	router := gin.Default()
@@ -64,23 +61,9 @@ func main() {
 	})
 
 	// 登入與註冊路由
-	// router.GET("/login", userProcessHandler.ShowLoginPage)
-	// router.POST("/login", userProcessHandler.PerformLogin)
-	// router.GET("/register", userProcessHandler.ShowRegisterPage)
-	// router.POST("/register", userProcessHandler.PerformRegister)
-	// router.GET("/logout", userProcessHandler.Logout)
 	router.GET("/get-all", todoHandler.ShowTodos)
 	router.POST("/add", todoHandler.AddTodo)
 	router.DELETE("/delete/:id", todoHandler.DeleteTodo)
-
-	// 需要 JWT 認證的路由群組
-	// authorized := router.Group("/")
-	// authorized.Use(handlers.JWTAuth())
-	// {
-	// 	authorized.GET("/get-all", todoHandler.ShowTodos)
-	// 	authorized.POST("/add", todoHandler.AddTodo)
-	// 	authorized.POST("/delete/:id", todoHandler.DeleteTodo)
-	// }
 
 	// 啟動服務器
 	router.Run(":3000")
