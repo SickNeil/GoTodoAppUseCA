@@ -22,6 +22,8 @@ func NewTodoHandler(useCase *usecases.TodoUseCase) *TodoHandler {
 }
 
 func (h *TodoHandler) ShowTodos(c *gin.Context) {
+	jwt := c.GetHeader("Authorization")
+	fmt.Println("handlers showtodos jwt", jwt)
 	fmt.Println("app server show todos")
 	todos, err := h.UseCase.GetTodos()
 	if err != nil {

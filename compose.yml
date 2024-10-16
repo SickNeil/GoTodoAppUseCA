@@ -11,6 +11,8 @@ services:
     depends_on:
       - auth-server
       - todo-app
+    volumes:
+      - ./api-gateway/key:/key
 
   todo-app:
     build: 
@@ -28,6 +30,8 @@ services:
       - POSTGRES_DB_NAME=Users             # PostgreSQL 資料庫名稱
       - MONGO_DB_HOST=mongo-database        # MongoDB 的主機名
       - JWT_SECRET=your_secret_key            # JWT 的密鑰
+    volumes:
+      - ./app/key:/key
 
   auth-server:
     build:
@@ -43,6 +47,8 @@ services:
       - POSTGRES_DB_PASSWORD=P@ssword
       - POSTGRES_DB_NAME=Users
       - JWT_SECRET=your_secret_key
+    volumes:
+      - ./auth/key:/key
 
   mongo-database:  # 將名稱更改為 mongo-database
     image: mongo:6

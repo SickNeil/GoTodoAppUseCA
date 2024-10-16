@@ -2,6 +2,7 @@
 package usecases
 
 import (
+	"fmt"
 	"go-todo-app/entities"
 	"time"
 )
@@ -22,6 +23,7 @@ func (uc *TodoUseCase) AddTodo(task string) error {
 		Task:      task,
 		CreatedAt: time.Now(),
 	}
+
 	return uc.Repo.Insert(todo)
 }
 
@@ -33,4 +35,13 @@ func (uc *TodoUseCase) GetTodos() ([]entities.Todo, error) {
 // DeleteTodo 用於刪除待辦事項
 func (uc *TodoUseCase) DeleteTodo(id string) error {
 	return uc.Repo.Delete(id)
+}
+
+func (uc *TodoUseCase) SetJWT(repo entities.TodoRepository, token string) {
+	fmt.Println("todo usecase SetJWT")
+	if jwtSettable, ok := repo.(entities.JwtSettable); ok {
+		fmt.Println("todo usecase SetJWT ok")
+		jwtSettable.SetJWT(token)
+	}
+	fmt.Println("todo usecase SetJWT end")
 }

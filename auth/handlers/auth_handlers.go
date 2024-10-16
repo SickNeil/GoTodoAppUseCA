@@ -97,9 +97,17 @@ func (h *AuthHandler) IsTokenValid(c *gin.Context) {
 	}
 
 	// 使用 UseCase 驗證 Token 是否有效
-	if _, err := h.UseCase.IsTokenValid(token); err != nil {
-		fmt.Println("Invalid token")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "無效的授權 Token"})
+	isValid, err := h.UseCase.IsTokenValid(token)
+	if err != nil {
+		fmt.Println("Error validating token:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "驗證 Token 時出錯"})
+		c.Abort()
+		return
+	}
+
+	if !isValid {
+		fmt.Println("Token is invalid")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token 無效"})
 		c.Abort()
 		return
 	}

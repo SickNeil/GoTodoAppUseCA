@@ -32,13 +32,14 @@ func (repo *JwtTodoRepository) Insert(todo entities.Todo) error {
 		return err
 	}
 
-	// 創建請求到 todo-app 的 /get-all API
+	// 創建請求到 todo-app 的 /get-all API, 把 jwt 放在 header 裡
 	req, err := http.NewRequest("POST", os.Getenv("TODO_APP_URL")+"/add", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return err
 	}
 
 	// 發送請求
+	req.Header.Set("Authorization", "Bearer "+repo.Jwt)
 	resp, err := repo.Client.Do(req)
 	if err != nil {
 		return err
@@ -61,6 +62,8 @@ func (repo *JwtTodoRepository) GetAll() ([]entities.Todo, error) {
 	}
 
 	// 發送請求
+	fmt.Println("repo.Jwt: ", repo.Jwt)
+	req.Header.Set("Authorization", "Bearer "+repo.Jwt)
 	resp, err := repo.Client.Do(req)
 	if err != nil {
 		return nil, err
@@ -97,6 +100,7 @@ func (repo *JwtTodoRepository) Delete(id string) error {
 		return err
 	}
 
+	req.Header.Set("Authorization", "Bearer "+repo.Jwt)
 	resp, err := repo.Client.Do(req)
 	if err != nil {
 		return err
@@ -108,4 +112,9 @@ func (repo *JwtTodoRepository) Delete(id string) error {
 	}
 
 	return nil
+}
+
+func (repo *JwtTodoRepository) SetJWT(jwt string) {
+	fmt.Println("SetJwt: ", jwt)
+	repo.Jwt = jwt
 }

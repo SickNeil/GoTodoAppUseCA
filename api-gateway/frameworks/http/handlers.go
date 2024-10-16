@@ -20,12 +20,26 @@ func NewTodoHandler(useCase *usecases.TodoUseCase) *TodoHandler {
 }
 
 func (h *TodoHandler) ShowTodos(c *gin.Context) {
-	// 從 cookie 的 JWT Token 中取得使用者名稱及email
-	tokenString, _ := c.Cookie("token")
+	// 從 cookie 的 JWT Token 中取得使用者名稱及email，public key 位於 /key/public.key
+	tokenString, err := c.Cookie("token")
+	fmt.Println("handlers showtodos tokenString", tokenString)
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/login")
+		c.Abort()
+		return
+	}
+
+	keyData, err := os.ReadFile("/key/public.key")
+	if err != nil {
+		fmt.Println("Error reading public key:", err)
+		c.Redirect(http.StatusSeeOther, "/login")
+		c.Abort()
+		return
+	}
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_SECRET")), nil
+		return jwt.ParseRSAPublicKeyFromPEM(keyData)
 	})
-	fmt.Println("tokenString", tokenString)
 
 	if err != nil {
 		c.String(http.StatusUnauthorized, err.Error())
@@ -40,8 +54,12 @@ func (h *TodoHandler) ShowTodos(c *gin.Context) {
 
 	username := claims["username"].(string)
 	email := claims["email"].(string)
+	fmt.Println("username", username)
+	fmt.Println("email", email)
 
 	fmt.Println("app server show todos")
+	fmt.Println("app server show todos tokenString", tokenString)
+	h.UseCase.SetJWT(h.UseCase.Repo, tokenString)
 	todos, err := h.UseCase.GetTodos()
 	if err != nil {
 		fmt.Println("app server show todos error", err)
@@ -63,7 +81,11 @@ func (h *TodoHandler) AddTodo(c *gin.Context) {
 		c.Redirect(http.StatusSeeOther, "/")
 		return
 	}
-	err := h.UseCase.AddTodo(task)
+
+	tokenString, err := c.Cookie("token")
+
+	h.UseCase.SetJWT(h.UseCase.Repo, tokenString)
+	err = h.UseCase.AddTodo(task)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
@@ -73,7 +95,11 @@ func (h *TodoHandler) AddTodo(c *gin.Context) {
 
 func (h *TodoHandler) DeleteTodo(c *gin.Context) {
 	id := c.Param("id")
-	err := h.UseCase.DeleteTodo(id)
+
+	tokenString, err := c.Cookie("token")
+
+	h.UseCase.SetJWT(h.UseCase.Repo, tokenString)
+	err = h.UseCase.DeleteTodo(id)
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return

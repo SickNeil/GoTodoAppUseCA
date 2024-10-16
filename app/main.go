@@ -60,10 +60,15 @@ func main() {
 		"formatAsDate": utils.FormatAsDate,
 	})
 
-	// 登入與註冊路由
-	router.GET("/get-all", todoHandler.ShowTodos)
-	router.POST("/add", todoHandler.AddTodo)
-	router.DELETE("/delete/:id", todoHandler.DeleteTodo)
+	// 需要 JWT 認證的路由群組
+	authorized := router.Group("/")
+	authorized.Use(handlers.JWTAuth())
+	{
+		// 登入與註冊路由
+		authorized.GET("/get-all", todoHandler.ShowTodos)
+		authorized.POST("/add", todoHandler.AddTodo)
+		authorized.DELETE("/delete/:id", todoHandler.DeleteTodo)
+	}
 
 	// 啟動服務器
 	router.Run(":3000")

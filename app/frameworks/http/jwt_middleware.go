@@ -9,30 +9,68 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var JwtSecret = []byte(os.Getenv("JWT_SECRET"))
-
 func JWTAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 從 Cookie 中獲取 Token
-		tokenString, err := c.Cookie("token")
+		fmt.Println("JWTAuth Middleware")
+		// 從 header Authorization 中獲取 Token，去除 Bearer 字串
+		tokenString := c.GetHeader("Authorization")
+		tokenString = tokenString[7:]
+		fmt.Println("tokenString", tokenString)
+
+		// 公鑰位於 /key/public.key ，使用公鑰來驗證 Token
+		keyData, err := os.ReadFile("/key/public.key")
 		if err != nil {
-			c.Redirect(http.StatusSeeOther, "/login")
+			fmt.Println("Error reading public key:", err)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Error reading public key"})
 			c.Abort()
 			return
 		}
 
-		// 解析並驗證 Token
+		// 解析 Token 並驗證簽名
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, jwt.ErrInvalidKeyType
+			// 確認 token 使用的演算法是 RS256
+			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-			return JwtSecret, nil
+
+			// 解析 RSA 公鑰
+			return jwt.ParseRSAPublicKeyFromPEM(keyData)
 		})
 
-		fmt.Println("Token", token)
+		if err != nil || !token.Valid {
+			fmt.Println("Token is invalid" + err.Error())
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token is invalid"})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+func TokenAuthMiddleware() gin.HandlerFunc {
+	fmt.Println("TokenAuthMiddleware Middleware")
+	return func(c *gin.Context) {
+		// 從 Header 中獲取 Token
+		tokenString := c.GetHeader("Authorization")
+
+		// 公鑰位於 /key/public.key ，使用公鑰來驗證 Token
+		keyData, err := os.ReadFile("/key/public.key")
+		if err != nil {
+			fmt.Println("Error reading public key:", err)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Error reading public key"})
+			c.Abort()
+			return
+		}
+
+		// 解析 Token
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			return jwt.ParseRSAPublicKeyFromPEM(keyData)
+		})
+
 		if err != nil || !token.Valid {
 			fmt.Println("Token is invalid")
-			c.Redirect(http.StatusSeeOther, "/login")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token is invalid"})
 			c.Abort()
 			return
 		}
@@ -41,43 +79,12 @@ func JWTAuth() gin.HandlerFunc {
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			fmt.Println("Token claims is invalid")
-			c.Redirect(http.StatusSeeOther, "/login")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token claims is invalid"})
 			c.Abort()
 			return
 		}
 
 		c.Set("username", claims["username"])
-		c.Next()
-	}
-}
-
-func TokenAuthMiddleware(jwtSecret []byte) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// 從 Cookie 中獲取 Token
-		tokenString, err := c.Cookie("token")
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token not found in cookies"})
-			return
-		}
-
-		// 解析和驗證 Token
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-			}
-			return jwtSecret, nil
-		})
-
-		if err != nil || !token.Valid {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token is invalid"})
-			return
-		}
-
-		// 將 Token 中的資訊存入上下文，供後續處理使用
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			c.Set("username", claims["username"])
-		}
-
 		c.Next()
 	}
 }
