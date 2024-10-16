@@ -48,3 +48,5 @@ todo-database: 包含 MongoDB 資料庫，運行在 localhost:27017。
 ```
 docker compose down
 ```
+
+注意：auth-server專案中附有私鑰，實際使用時需另外生成。
