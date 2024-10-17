@@ -45,13 +45,13 @@ func main() {
 	router.GET("/logout", userProcessHandler.Logout)
 
 	// 需要 JWT 認證的路由群組
-	authorized := router.Group("/")
-	authorized.Use(handlers.JWTAuth())
-	{
-		authorized.GET("/", todoHandler.ShowTodos)
-		authorized.POST("/", todoHandler.AddTodo)
-		authorized.POST("/delete/:id", todoHandler.DeleteTodo)
-	}
+	// authorized := router.Group("/")
+	// authorized.Use(handlers.JWTAuth())
+	// {
+	router.GET("/", todoHandler.ShowTodos)
+	router.POST("/", todoHandler.AddTodo)
+	router.POST("/delete/:id", todoHandler.DeleteTodo)
+	// }
 
 	// 啟動服務器
 	router.Run(":5000")
