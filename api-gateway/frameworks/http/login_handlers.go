@@ -9,7 +9,6 @@ import (
 	"go-todo-app/usecases"
 	"io"
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,12 +31,7 @@ func (h *LoginProcessHandler) PerformLogin(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
-	// 準備向認證伺服器發送的請求資料
-	loginData := map[string]string{
-		"username": username,
-		"password": password,
-	}
-	jsonData, err := json.Marshal(loginData)
+	result, err := h.UseCase.Login(username, password)
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
 			"Error": "系統錯誤，請稍後再試",
@@ -45,25 +39,36 @@ func (h *LoginProcessHandler) PerformLogin(c *gin.Context) {
 		return
 	}
 
-	// 讀取認證伺服器的回應
-	authServerUrl := os.Getenv("AUTH_SERVER_URL")
-	body, err := SendToAuthServer(jsonData, authServerUrl+"/login")
-	if err != nil {
+	if result.StatusCode != http.StatusOK {
 		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
 			"Error": "登入失敗，請檢查帳號密碼",
 		})
 		return
 	}
 
-	// 認證成功，取得 Token
-	var successResponse map[string]string
-	json.Unmarshal(body, &successResponse)
-	token := successResponse["token"]
+	// 從回應中讀取 Token
+	body, err := io.ReadAll(result.Body)
+	if err != nil {
+		fmt.Println("Error reading response body: ", err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"Error": "系統錯誤，請稍後再試",
+		})
+		return
+	}
 
-	fmt.Println("Token: ", token)
+	var token map[string]string
+	if err := json.Unmarshal(body, &token); err != nil {
+		fmt.Println("Error unmarshalling response body: ", err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"Error": "系統錯誤，請稍後再試",
+		})
+		return
+	}
+
+	fmt.Println("Token: ", token["token"])
 
 	// 將 Token 保存到 Cookie 中
-	c.SetCookie("token", token, 3600, "/", "", false, true)
+	c.SetCookie("token", token["token"], 3600, "/", "", false, true)
 
 	// 重定向到主頁
 	c.Redirect(http.StatusSeeOther, "/")
@@ -107,12 +112,7 @@ func (h *LoginProcessHandler) PerformRegister(c *gin.Context) {
 	password := c.PostForm("password")
 	email := c.PostForm("email")
 
-	registerData := map[string]string{
-		"username": username,
-		"password": password,
-		"email":    email,
-	}
-	jsonData, err := json.Marshal(registerData)
+	resp, err := h.UseCase.Repo.Register(username, password, email)
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "register.html", gin.H{
 			"Error": "系統錯誤，請稍後再試",
@@ -120,14 +120,16 @@ func (h *LoginProcessHandler) PerformRegister(c *gin.Context) {
 		return
 	}
 
-	// 向認證伺服器發送註冊請求
-	authServerUrl := os.Getenv("AUTH_SERVER_URL")
-	_, err = SendToAuthServer(jsonData, authServerUrl+"/register")
-	if err != nil {
-		c.HTML(http.StatusInternalServerError, "register.html", gin.H{
-			"Error": "註冊失敗，請稍後再試 " + err.Error(),
-		})
-		return
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		_, err := io.ReadAll(resp.Body)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "register.html", gin.H{
+				"Error": "系統錯誤，請稍後再試",
+			})
+			return
+		}
 	}
 
 	// 註冊成功，重定向到登入頁面

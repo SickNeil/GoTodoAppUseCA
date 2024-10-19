@@ -13,6 +13,7 @@ import (
 // 實作 JwtLoginRepository 介面
 type JwtLoginRepository struct {
 	Client *http.Client
+	Jwt    string
 }
 
 // NewJwtLoginRepository 用於建立 JwtLoginRepository 實例
@@ -110,4 +111,62 @@ func (repo *JwtLoginRepository) VerifyUser(token string) (bool, error) {
 	}
 
 	return result["result"], nil
+}
+
+func (repo *JwtLoginRepository) Register(userName, password, email string) (*http.Response, error) {
+	// 送出request到auth-service
+	userData := map[string]string{
+		"username": userName,
+		"password": password,
+		"email":    email,
+	}
+	jsonData, err := json.Marshal(userData)
+	if err != nil {
+		return nil, err
+	}
+
+	authServerUrl := os.Getenv("AUTH_SERVER_URL")
+	resp, err := repo.Client.Post(authServerUrl+"/register", "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+
+	// 檢查回應狀態碼是否為 200 (OK)
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("註冊失敗: " + resp.Status)
+	}
+
+	return resp, nil
+}
+
+func (repo *JwtLoginRepository) Login(userName, password string) (*http.Response, error) {
+	// 送出request到auth-service
+	userData := map[string]string{
+		"username": userName,
+		"password": password,
+	}
+	jsonData, err := json.Marshal(userData)
+	if err != nil {
+		return nil, err
+	}
+
+	authServerUrl := os.Getenv("AUTH_SERVER_URL")
+
+	req, err := http.NewRequest("POST", authServerUrl+"/login", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+repo.Jwt)
+	resp, err := repo.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// 檢查回應狀態碼是否為 200 (OK)
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("登入失敗: " + resp.Status)
+	}
+
+	return resp, nil
 }
