@@ -8,11 +8,11 @@ import (
 
 // UserProcessUseCase 定義登入相關的業務邏輯
 type UserProcessUseCase struct {
-	Repo entities.LoginRepository
+	Repo entities.ILoginRepo
 }
 
 // NewLoginUseCase 建立新的 UserProcessUseCase
-func NewLoginUseCase(repo entities.LoginRepository) *UserProcessUseCase {
+func NewLoginUseCase(repo entities.ILoginRepo) *UserProcessUseCase {
 	return &UserProcessUseCase{Repo: repo}
 }
 

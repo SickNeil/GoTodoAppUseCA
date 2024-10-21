@@ -12,16 +12,16 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type MongoDBTodoRepository struct {
+type MongoDBTodoRepo struct {
 	Collection *mongo.Collection
 }
 
-func NewMongoDBTodoRepository(collection *mongo.Collection) *MongoDBTodoRepository {
-	return &MongoDBTodoRepository{Collection: collection}
+func NewMongoDBTodoRepository(collection *mongo.Collection) *MongoDBTodoRepo {
+	return &MongoDBTodoRepo{Collection: collection}
 }
 
 // Insert 用於新增待辦事項
-func (m *MongoDBTodoRepository) Insert(todo entities.Todo) error {
+func (m *MongoDBTodoRepo) Insert(todo entities.Todo) error {
 	var objID primitive.ObjectID
 	var err error
 
@@ -49,7 +49,7 @@ func (m *MongoDBTodoRepository) Insert(todo entities.Todo) error {
 	return err
 }
 
-func (m *MongoDBTodoRepository) GetAll() ([]entities.Todo, error) {
+func (m *MongoDBTodoRepo) GetAll() ([]entities.Todo, error) {
 	var todos []entities.Todo
 	cursor, err := m.Collection.Find(context.TODO(), bson.M{})
 	if err != nil {
@@ -81,7 +81,7 @@ func (m *MongoDBTodoRepository) GetAll() ([]entities.Todo, error) {
 	return todos, nil
 }
 
-func (m *MongoDBTodoRepository) Delete(id string) error {
+func (m *MongoDBTodoRepo) Delete(id string) error {
 	// 將字符串 ID 轉換為 ObjectID
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {

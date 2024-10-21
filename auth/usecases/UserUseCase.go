@@ -9,25 +9,19 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type AuthUserUseCase interface {
-	Login(username, password string) (string, error)
-	Register(user *entities.User) error
-	IsTokenValid(token string) (bool, error)
-}
-
-type userUseCase struct {
-	userRepo interfaces.PostgresUserRepository
+type UserUseCase struct {
+	userRepo interfaces.PostgresUserRepo
 	jwtAuth  JWTAuth
 }
 
-func NewUserUseCase(userRepo interfaces.PostgresUserRepository, jwtAuth JWTAuth) AuthUserUseCase {
-	return &userUseCase{
+func NewUserUseCase(userRepo interfaces.PostgresUserRepo, jwtAuth JWTAuth) entities.IUserUseCase {
+	return &UserUseCase{
 		userRepo: userRepo,
 		jwtAuth:  jwtAuth,
 	}
 }
 
-func (u *userUseCase) Login(username, password string) (string, error) {
+func (u *UserUseCase) Login(username, password string) (string, error) {
 	user, err := u.userRepo.GetUserByUsername(username)
 	if err != nil {
 		return "", fmt.Errorf("使用者名稱或密碼錯誤")
@@ -52,7 +46,7 @@ func (u *userUseCase) Login(username, password string) (string, error) {
 	return token, nil
 }
 
-func (u *userUseCase) Register(user *entities.User) error {
+func (u *UserUseCase) Register(user *entities.User) error {
 	// 檢查使用者是否已存在
 	exists, err := u.userRepo.UserExists(user.Username)
 	if err != nil {
@@ -73,6 +67,6 @@ func (u *userUseCase) Register(user *entities.User) error {
 	return u.userRepo.CreateUser(user)
 }
 
-func (u *userUseCase) IsTokenValid(token string) (bool, error) {
+func (u *UserUseCase) IsTokenValid(token string) (bool, error) {
 	return u.jwtAuth.IsTokenValid(token)
 }

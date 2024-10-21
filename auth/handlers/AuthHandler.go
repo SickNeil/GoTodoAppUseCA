@@ -3,7 +3,6 @@ package handlers
 
 import (
 	"auth/entities"
-	"auth/usecases"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,10 +11,10 @@ import (
 )
 
 type AuthHandler struct {
-	UseCase usecases.AuthUserUseCase
+	UseCase entities.IUserUseCase
 }
 
-func NewAuthHandler(useCase usecases.AuthUserUseCase) *AuthHandler {
+func NewAuthHandler(useCase entities.IUserUseCase) *AuthHandler {
 	return &AuthHandler{
 		UseCase: useCase,
 	}

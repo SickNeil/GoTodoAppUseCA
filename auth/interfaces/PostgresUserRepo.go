@@ -5,17 +5,17 @@ import (
 	"database/sql"
 )
 
-type PostgresUserRepository struct {
+type PostgresUserRepo struct {
 	DB *sql.DB
 }
 
-func NewPostgresUserRepository(db *sql.DB) *PostgresUserRepository {
-	return &PostgresUserRepository{
+func NewPostgresUserRepository(db *sql.DB) *PostgresUserRepo {
+	return &PostgresUserRepo{
 		DB: db,
 	}
 }
 
-func (r *PostgresUserRepository) GetUserByUsername(username string) (*entities.User, error) {
+func (r *PostgresUserRepo) GetUserByUsername(username string) (*entities.User, error) {
 	user := &entities.User{}
 	err := r.DB.QueryRow("SELECT id, username, password, email FROM users WHERE username = $1",
 		username).Scan(&user.ID, &user.Username, &user.Password, &user.Email)
@@ -25,13 +25,13 @@ func (r *PostgresUserRepository) GetUserByUsername(username string) (*entities.U
 	return user, nil
 }
 
-func (r *PostgresUserRepository) CreateUser(user *entities.User) error {
+func (r *PostgresUserRepo) CreateUser(user *entities.User) error {
 	_, err := r.DB.Exec("INSERT INTO users (username, password, email) VALUES ($1, $2, $3)",
 		user.Username, user.Password, user.Email)
 	return err
 }
 
-func (r *PostgresUserRepository) UserExists(username string) (bool, error) {
+func (r *PostgresUserRepo) UserExists(username string) (bool, error) {
 	var exists bool
 	err := r.DB.QueryRow("SELECT exists(SELECT 1 FROM users WHERE username=$1)", username).
 		Scan(&exists)
